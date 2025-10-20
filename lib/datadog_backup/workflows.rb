@@ -28,8 +28,8 @@ module DatadogBackup
     rescue Faraday::ResourceNotFound
       LOGGER.warn("Workflow #{id} not found (404)")
       {}
-    rescue Faraday::BadRequestError => e
-      LOGGER.warn("Workflow #{id} returned bad request (400) - #{e.message}")
+    rescue Faraday::BadRequestError > e
+      LOGGER.warn("Workflow #{id} returned bad request (400) - skipping - #{e.message}")
       {}
     end
 
