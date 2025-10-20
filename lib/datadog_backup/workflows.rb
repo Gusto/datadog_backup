@@ -26,7 +26,10 @@ module DatadogBackup
     def get_by_id(id)
       except(get(id))
     rescue Faraday::ResourceNotFound
-      LOGGER.warn("Workflow #{id} not found")
+      LOGGER.warn("Workflow #{id} not found (404)")
+      {}
+    rescue Faraday::BadRequestError => e
+      LOGGER.warn("Workflow #{id} returned bad request (400) - #{e.message}")
       {}
     end
 
