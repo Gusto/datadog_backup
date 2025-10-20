@@ -25,7 +25,8 @@ module DatadogBackup
     end
 
     def class_from_id(id)
-      class_string = ::File.dirname(find_file_by_id(id)).split('/').last.capitalize
+      dir_name = ::File.dirname(find_file_by_id(id)).split('/').last
+      class_string = dir_name == 'slos' ? 'SLOs' : dir_name.capitalize
       ::DatadogBackup.const_get(class_string)
     end
 
