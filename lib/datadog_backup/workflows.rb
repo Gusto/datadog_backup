@@ -45,7 +45,30 @@ module DatadogBackup
       response.body.fetch('data')
     end
 
+    # Override create to strip metadata fields that v2 API doesn't accept
+    def create(body)
+      clean_body = strip_metadata_fields(body)
+      super(clean_body)
+    end
+
+    # Override update to use PATCH (v2 API requirement) and strip metadata fields
+    def update(id, body)
+      clean_body = strip_metadata_fields(body)
+      headers = {}
+      response = api_service.patch("/api/#{api_version}/#{api_resource_name}/#{id}", clean_body, headers)
+      body = body_with_2xx(response)
+      LOGGER.warn "Successfully restored #{id} to datadog."
+      LOGGER.info 'Invalidating cache'
+      @get_all = nil
+      body
+    end
+
     private
+
+    # Remove fields that shouldn't be sent to the API for create/update
+    def strip_metadata_fields(body)
+      body.reject { |key, _| %w[id relationships type].include?(key) }
+    end
 
     def api_version
       'v2'
