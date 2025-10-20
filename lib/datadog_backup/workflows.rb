@@ -62,38 +62,6 @@ module DatadogBackup
       response.body.fetch('data')
     end
 
-    # Override create to wrap in data object (v2 API requirement)
-    def create(body)
-      # Unwrap if backup file has 'data' wrapper (for UI import format)
-      unwrapped_body = body['data'] || body
-      clean_body = strip_metadata_fields(unwrapped_body)
-      # v2 API requires body wrapped in 'data' object
-      wrapped_body = { 'data' => clean_body }
-      headers = {}
-      response = api_service.post("/api/#{api_version}/#{api_resource_name}", wrapped_body, headers)
-      body = body_with_2xx(response)
-      LOGGER.warn "Successfully created #{body.fetch(id_keyname)} in datadog."
-      LOGGER.info 'Invalidating cache'
-      @get_all = nil
-      body
-    end
-
-    # Override update to use PATCH (v2 API requirement) and wrap in data object
-    def update(id, body)
-      # Unwrap if backup file has 'data' wrapper (for UI import format)
-      unwrapped_body = body['data'] || body
-      clean_body = strip_metadata_fields(unwrapped_body)
-      # v2 API requires body wrapped in 'data' object
-      wrapped_body = { 'data' => clean_body }
-      headers = {}
-      response = api_service.patch("/api/#{api_version}/#{api_resource_name}/#{id}", wrapped_body, headers)
-      body = body_with_2xx(response)
-      LOGGER.warn "Successfully restored #{id} to datadog."
-      LOGGER.info 'Invalidating cache'
-      @get_all = nil
-      body
-    end
-
     # Override to always use JSON format (required for Datadog UI import)
     def dump(object)
       JSON.pretty_generate(object.deep_sort(array: disable_array_sort ? false : true))
@@ -105,20 +73,6 @@ module DatadogBackup
     end
 
     private
-
-    # Remove fields that shouldn't be sent to the API for create/update
-    def strip_metadata_fields(body)
-      cleaned = body.reject { |key, _| %w[id relationships type].include?(key) }
-
-      # Also remove timestamp fields from within attributes
-      if cleaned['attributes']
-        cleaned['attributes'] = cleaned['attributes'].reject do |key, _|
-          %w[createdAt updatedAt modifiedAt lastExecutedAt created_at updated_at modified_at last_executed_at].include?(key)
-        end
-      end
-
-      cleaned
-    end
 
     def api_version
       'v2'
