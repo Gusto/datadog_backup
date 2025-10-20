@@ -161,21 +161,18 @@ describe DatadogBackup::Workflows do
       workflows.write_file('{"a":"b"}', workflows.filename('abc-123-def'))
       expect(workflows.diff('abc-123-def')).to eq(<<~EODASH
          ---
-        -data:
-        -  attributes:
-        -    description: A test workflow for CI/CD
-        -    name: Test Workflow
-        -    steps:
-        -    - action: com.datadoghq.http
-        -      name: step_1
-        -      params:
-        -        method: POST
-        -        url: https://example.com/api
-        -    triggers:
-        -    - schedule: 0 9 * * 1-5
-        -      type: schedule
-        -  id: abc-123-def
-        -  type: workflows
+        -description: A test workflow for CI/CD
+        -id: abc-123-def
+        -name: Test Workflow
+        -steps:
+        -- action: com.datadoghq.http
+        -  name: step_1
+        -  params:
+        -    method: POST
+        -    url: https://example.com/api
+        -triggers:
+        -- schedule: 0 9 * * 1-5
+        -  type: schedule
         +a: b
       EODASH
       .chomp)
