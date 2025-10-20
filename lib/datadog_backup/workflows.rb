@@ -67,7 +67,16 @@ module DatadogBackup
 
     # Remove fields that shouldn't be sent to the API for create/update
     def strip_metadata_fields(body)
-      body.reject { |key, _| %w[id relationships type].include?(key) }
+      cleaned = body.reject { |key, _| %w[id relationships type].include?(key) }
+
+      # Also remove timestamp fields from within attributes
+      if cleaned['attributes']
+        cleaned['attributes'] = cleaned['attributes'].reject do |key, _|
+          %w[createdAt updatedAt modifiedAt lastExecutedAt created_at updated_at modified_at last_executed_at].include?(key)
+        end
+      end
+
+      cleaned
     end
 
     def api_version
