@@ -29,13 +29,13 @@ module DatadogBackup
       LOGGER.warn("Workflow #{id} not found (404)")
       {}
     rescue Faraday::BadRequestError => e
-      LOGGER.warn("Workflow #{id} returned bad request (400) - skipping - #{e.message}")
+      LOGGER.warn("Workflow #{id} returned bad request (400) - skipping")
       {}
     end
 
     def initialize(options)
       super
-      @banlist = %w[created_at modified_at last_executed_at].freeze
+      @banlist = %w[createdAt modifiedAt lastExecutedAt created_at modified_at last_executed_at].freeze
     end
 
     # v2 API wraps all responses in 'data' key
