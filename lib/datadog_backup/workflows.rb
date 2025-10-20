@@ -54,6 +54,7 @@ module DatadogBackup
     # Override update to use PATCH (v2 API requirement) and strip metadata fields
     def update(id, body)
       clean_body = strip_metadata_fields(body)
+      LOGGER.debug "Updating workflow #{id} with body: #{clean_body.inspect}"
       headers = {}
       response = api_service.patch("/api/#{api_version}/#{api_resource_name}/#{id}", clean_body, headers)
       body = body_with_2xx(response)
