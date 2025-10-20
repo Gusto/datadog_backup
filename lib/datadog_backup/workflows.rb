@@ -61,7 +61,8 @@ module DatadogBackup
     # Override update to use PATCH (v2 API requirement) and strip metadata fields
     def update(id, body)
       clean_body = strip_metadata_fields(body)
-      LOGGER.debug "Updating workflow #{id} with body: #{clean_body.inspect}"
+      LOGGER.debug "Updating workflow #{id} with clean_body keys: #{clean_body.keys.inspect}"
+      LOGGER.debug "Body attributes keys: #{clean_body['attributes']&.keys&.inspect}"
       headers = {}
       response = api_service.patch("/api/#{api_version}/#{api_resource_name}/#{id}", clean_body, headers)
       body = body_with_2xx(response)
@@ -69,6 +70,9 @@ module DatadogBackup
       LOGGER.info 'Invalidating cache'
       @get_all = nil
       body
+    rescue Faraday::BadRequestError => e
+      LOGGER.error "Failed to update workflow #{id}: #{e.response[:body]}"
+      raise
     end
 
     private
