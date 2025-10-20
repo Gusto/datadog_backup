@@ -59,44 +59,34 @@ describe DatadogBackup::Workflows do
   end
   let(:workflow_abc_123_clean) do
     {
-      'data' => {
-        'type' => 'workflows',
-        'id' => 'abc-123-def',
-        'attributes' => {
-          'name' => 'Test Workflow',
-          'description' => 'A test workflow for CI/CD',
-          'steps' => [
-            {
-              'name' => 'step_1',
-              'action' => 'com.datadoghq.http',
-              'params' => {
-                'url' => 'https://example.com/api',
-                'method' => 'POST'
-              }
-            }
-          ],
-          'triggers' => [
-            {
-              'type' => 'schedule',
-              'schedule' => '0 9 * * 1-5'
-            }
-          ]
+      'id' => 'abc-123-def',
+      'name' => 'Test Workflow',
+      'description' => 'A test workflow for CI/CD',
+      'steps' => [
+        {
+          'name' => 'step_1',
+          'action' => 'com.datadoghq.http',
+          'params' => {
+            'url' => 'https://example.com/api',
+            'method' => 'POST'
+          }
         }
-      }
+      ],
+      'triggers' => [
+        {
+          'type' => 'schedule',
+          'schedule' => '0 9 * * 1-5'
+        }
+      ]
     }
   end
   let(:workflow_xyz_456_clean) do
     {
-      'data' => {
-        'type' => 'workflows',
-        'id' => 'xyz-456-ghi',
-        'attributes' => {
-          'name' => 'Another Workflow',
-          'description' => 'Another test workflow',
-          'steps' => [],
-          'triggers' => []
-        }
-      }
+      'id' => 'xyz-456-ghi',
+      'name' => 'Another Workflow',
+      'description' => 'Another test workflow',
+      'steps' => [],
+      'triggers' => []
     }
   end
   let(:fetched_workflows) do

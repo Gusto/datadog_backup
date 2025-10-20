@@ -25,23 +25,18 @@ module DatadogBackup
 
     def get_by_id(id)
       workflow = get(id)
-      # Remove timestamps from attributes before applying general banlist
+      # Flatten attributes to top level for flat Datadog format
       if workflow['attributes']
-        workflow['attributes'] = workflow['attributes'].reject do |key, _|
+        flattened = workflow['attributes'].dup
+        flattened['id'] = workflow['id']
+        # Remove timestamp fields
+        flattened.reject! do |key, _|
           @banlist.include?(key)
         end
+        flattened
+      else
+        except(workflow)
       end
-      cleaned = except(workflow)
-
-      # Wrap in 'data' for Datadog UI import compatibility
-      # Add 'type' field if not present (required by v2 API)
-      {
-        'data' => {
-          'type' => 'workflows',
-          'id' => cleaned['id'],
-          'attributes' => cleaned['attributes']
-        }
-      }
     rescue Faraday::ResourceNotFound
       LOGGER.warn("Workflow #{id} not found (404)")
       {}
