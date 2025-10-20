@@ -24,7 +24,14 @@ module DatadogBackup
     end
 
     def get_by_id(id)
-      except(get(id))
+      workflow = get(id)
+      # Remove timestamps from attributes before applying general banlist
+      if workflow['attributes']
+        workflow['attributes'] = workflow['attributes'].reject do |key, _|
+          @banlist.include?(key)
+        end
+      end
+      except(workflow)
     rescue Faraday::ResourceNotFound
       LOGGER.warn("Workflow #{id} not found (404)")
       {}
