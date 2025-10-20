@@ -42,7 +42,7 @@ module DatadogBackup
 
     def initialize(options)
       super
-      @banlist = %w[createdAt modifiedAt lastExecutedAt created_at modified_at last_executed_at].freeze
+      @banlist = %w[createdAt updatedAt modifiedAt lastExecutedAt created_at updated_at modified_at last_executed_at].freeze
     end
 
     # v2 API wraps all responses in 'data' key
