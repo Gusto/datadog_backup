@@ -52,27 +52,32 @@ module DatadogBackup
       response.body.fetch('data')
     end
 
-    # Override create to strip metadata fields that v2 API doesn't accept
+    # Override create to wrap in data object (v2 API requirement)
     def create(body)
       clean_body = strip_metadata_fields(body)
-      super(clean_body)
+      # v2 API requires body wrapped in 'data' object
+      wrapped_body = { 'data' => clean_body }
+      headers = {}
+      response = api_service.post("/api/#{api_version}/#{api_resource_name}", wrapped_body, headers)
+      body = body_with_2xx(response)
+      LOGGER.warn "Successfully created #{body.fetch(id_keyname)} in datadog."
+      LOGGER.info 'Invalidating cache'
+      @get_all = nil
+      body
     end
 
-    # Override update to use PATCH (v2 API requirement) and strip metadata fields
+    # Override update to use PATCH (v2 API requirement) and wrap in data object
     def update(id, body)
       clean_body = strip_metadata_fields(body)
-      LOGGER.debug "Updating workflow #{id} with clean_body keys: #{clean_body.keys.inspect}"
-      LOGGER.debug "Body attributes keys: #{clean_body['attributes']&.keys&.inspect}"
+      # v2 API requires body wrapped in 'data' object
+      wrapped_body = { 'data' => clean_body }
       headers = {}
-      response = api_service.patch("/api/#{api_version}/#{api_resource_name}/#{id}", clean_body, headers)
+      response = api_service.patch("/api/#{api_version}/#{api_resource_name}/#{id}", wrapped_body, headers)
       body = body_with_2xx(response)
       LOGGER.warn "Successfully restored #{id} to datadog."
       LOGGER.info 'Invalidating cache'
       @get_all = nil
       body
-    rescue Faraday::BadRequestError => e
-      LOGGER.error "Failed to update workflow #{id}: #{e.response[:body]}"
-      raise
     end
 
     private
