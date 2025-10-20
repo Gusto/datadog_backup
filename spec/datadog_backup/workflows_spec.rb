@@ -143,7 +143,7 @@ describe DatadogBackup::Workflows do
   describe '#get_by_id' do
     subject { workflows.get_by_id('abc-123-def') }
 
-    it 'returns workflow in JSON:API format without timestamps' do
+    it 'returns workflow in flat format without timestamps' do
       expect(subject).to eq(workflow_abc_123_clean)
     end
   end
