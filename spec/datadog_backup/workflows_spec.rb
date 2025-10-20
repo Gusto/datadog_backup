@@ -59,37 +59,43 @@ describe DatadogBackup::Workflows do
   end
   let(:workflow_abc_123_clean) do
     {
-      'id' => 'abc-123-def',
-      'attributes' => {
-        'name' => 'Test Workflow',
-        'description' => 'A test workflow for CI/CD',
-        'steps' => [
-          {
-            'name' => 'step_1',
-            'action' => 'com.datadoghq.http',
-            'params' => {
-              'url' => 'https://example.com/api',
-              'method' => 'POST'
+      'data' => {
+        'type' => 'workflows',
+        'id' => 'abc-123-def',
+        'attributes' => {
+          'name' => 'Test Workflow',
+          'description' => 'A test workflow for CI/CD',
+          'steps' => [
+            {
+              'name' => 'step_1',
+              'action' => 'com.datadoghq.http',
+              'params' => {
+                'url' => 'https://example.com/api',
+                'method' => 'POST'
+              }
             }
-          }
-        ],
-        'triggers' => [
-          {
-            'type' => 'schedule',
-            'schedule' => '0 9 * * 1-5'
-          }
-        ]
+          ],
+          'triggers' => [
+            {
+              'type' => 'schedule',
+              'schedule' => '0 9 * * 1-5'
+            }
+          ]
+        }
       }
     }
   end
   let(:workflow_xyz_456_clean) do
     {
-      'id' => 'xyz-456-ghi',
-      'attributes' => {
-        'name' => 'Another Workflow',
-        'description' => 'Another test workflow',
-        'steps' => [],
-        'triggers' => []
+      'data' => {
+        'type' => 'workflows',
+        'id' => 'xyz-456-ghi',
+        'attributes' => {
+          'name' => 'Another Workflow',
+          'description' => 'Another test workflow',
+          'steps' => [],
+          'triggers' => []
+        }
       }
     }
   end
@@ -163,19 +169,21 @@ describe DatadogBackup::Workflows do
       workflows.write_file('{"a":"b"}', workflows.filename('abc-123-def'))
       expect(workflows.diff('abc-123-def')).to eq(<<~EODASH
          ---
-        -attributes:
-        -  description: A test workflow for CI/CD
-        -  name: Test Workflow
-        -  steps:
-        -  - action: com.datadoghq.http
-        -    name: step_1
-        -    params:
-        -      method: POST
-        -      url: https://example.com/api
-        -  triggers:
-        -  - schedule: 0 9 * * 1-5
-        -    type: schedule
-        -id: abc-123-def
+        -data:
+        -  attributes:
+        -    description: A test workflow for CI/CD
+        -    name: Test Workflow
+        -    steps:
+        -    - action: com.datadoghq.http
+        -      name: step_1
+        -      params:
+        -        method: POST
+        -        url: https://example.com/api
+        -    triggers:
+        -    - schedule: 0 9 * * 1-5
+        -      type: schedule
+        -  id: abc-123-def
+        -  type: workflows
         +a: b
       EODASH
       .chomp)

@@ -31,11 +31,21 @@ module DatadogBackup
           @banlist.include?(key)
         end
       end
-      except(workflow)
+      cleaned = except(workflow)
+
+      # Wrap in 'data' for Datadog UI import compatibility
+      # Add 'type' field if not present (required by v2 API)
+      {
+        'data' => {
+          'type' => 'workflows',
+          'id' => cleaned['id'],
+          'attributes' => cleaned['attributes']
+        }
+      }
     rescue Faraday::ResourceNotFound
       LOGGER.warn("Workflow #{id} not found (404)")
       {}
-    rescue Faraday::BadRequestError => e
+    rescue Faraday::BadRequestError
       LOGGER.warn("Workflow #{id} returned bad request (400) - skipping")
       {}
     end
@@ -54,7 +64,9 @@ module DatadogBackup
 
     # Override create to wrap in data object (v2 API requirement)
     def create(body)
-      clean_body = strip_metadata_fields(body)
+      # Unwrap if backup file has 'data' wrapper (for UI import format)
+      unwrapped_body = body['data'] || body
+      clean_body = strip_metadata_fields(unwrapped_body)
       # v2 API requires body wrapped in 'data' object
       wrapped_body = { 'data' => clean_body }
       headers = {}
@@ -68,7 +80,9 @@ module DatadogBackup
 
     # Override update to use PATCH (v2 API requirement) and wrap in data object
     def update(id, body)
-      clean_body = strip_metadata_fields(body)
+      # Unwrap if backup file has 'data' wrapper (for UI import format)
+      unwrapped_body = body['data'] || body
+      clean_body = strip_metadata_fields(unwrapped_body)
       # v2 API requires body wrapped in 'data' object
       wrapped_body = { 'data' => clean_body }
       headers = {}
@@ -78,6 +92,16 @@ module DatadogBackup
       LOGGER.info 'Invalidating cache'
       @get_all = nil
       body
+    end
+
+    # Override to always use JSON format (required for Datadog UI import)
+    def dump(object)
+      JSON.pretty_generate(object.deep_sort(array: disable_array_sort ? false : true))
+    end
+
+    # Override to always use .json extension
+    def filename(id)
+      ::File.join(mydir, "#{id}.json")
     end
 
     private
