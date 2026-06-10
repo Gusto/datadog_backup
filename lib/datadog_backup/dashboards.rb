@@ -27,6 +27,9 @@ module DatadogBackup
         dashboard = except(get(id))
       rescue Faraday::ResourceNotFound => e
         dashboard = {}
+      rescue Faraday::ForbiddenError
+        LOGGER.warn("Dashboard #{id} access forbidden (403) - skipping")
+        dashboard = {}
       end
       except(dashboard)
     end

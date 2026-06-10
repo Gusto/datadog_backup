@@ -25,7 +25,17 @@ module DatadogBackup
 
     def backup
       resource_instances.each(&:purge)
-      resource_instances.each(&:backup)
+
+      errors = []
+      resource_instances.each do |resource_instance|
+        resource_instance.backup
+      rescue StandardError => e
+        LOGGER.error("#{resource_instance.class} backup failed: #{e.class} #{e.message} - continuing with remaining resources")
+        errors << [resource_instance.class, e]
+      end
+
+      raise_backup_errors(errors) unless errors.empty?
+
       any_resource_instance.all_files
     end
 
@@ -116,6 +126,11 @@ module DatadogBackup
           puts 'Invalid response, please try again.'
         end
       end
+    end
+
+    def raise_backup_errors(errors)
+      summary = errors.map { |klass, e| "#{klass} (#{e.class})" }.join(', ')
+      raise "Backup completed with errors in #{errors.size} resource type(s): #{summary}"
     end
 
     def matching_resource_instance(klass)
