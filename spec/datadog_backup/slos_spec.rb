@@ -157,6 +157,22 @@ describe DatadogBackup::SLOs do
     subject { slos.get_by_id('abc-123') }
 
     it { is_expected.to eq slo_abc_123 }
+
+    context 'when the SLO is access-restricted (403)' do
+      subject { slos.get_by_id('forbidden-id') }
+
+      before do
+        stubs.get('/api/v1/slo/forbidden-id') do
+          raise Faraday::ForbiddenError, 'the server responded with status 403'
+        end
+      end
+
+      it 'returns an empty hash instead of raising' do
+        expect { slos.get_by_id('forbidden-id') }.not_to raise_error
+      end
+
+      it { is_expected.to eq({}) }
+    end
   end
 
   describe '#diff' do
