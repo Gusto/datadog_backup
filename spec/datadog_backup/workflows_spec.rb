@@ -146,6 +146,22 @@ describe DatadogBackup::Workflows do
     it 'returns workflow in flat format without timestamps' do
       expect(subject).to eq(workflow_abc_123_clean)
     end
+
+    context 'when the workflow is access-restricted (403)' do
+      subject { workflows.get_by_id('forbidden-id') }
+
+      before do
+        stubs.get('/api/v2/workflows/forbidden-id') do
+          raise Faraday::ForbiddenError, 'the server responded with status 403'
+        end
+      end
+
+      it 'returns an empty hash instead of raising' do
+        expect { workflows.get_by_id('forbidden-id') }.not_to raise_error
+      end
+
+      it { is_expected.to eq({}) }
+    end
   end
 
   describe '#all' do

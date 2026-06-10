@@ -43,6 +43,9 @@ module DatadogBackup
     rescue Faraday::BadRequestError
       LOGGER.warn("Workflow #{id} returned bad request (400) - skipping")
       {}
+    rescue Faraday::ForbiddenError
+      LOGGER.warn("Workflow #{id} access forbidden (403) - skipping")
+      {}
     end
 
     def initialize(options)
