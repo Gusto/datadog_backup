@@ -27,7 +27,7 @@ module DatadogBackup
         slo = except(get(id))
       rescue Faraday::ResourceNotFound => e
         slo = {}
-      rescue Faraday::ForbiddenError => e
+      rescue Faraday::ForbiddenError
         LOGGER.warn("SLO #{id} access forbidden (403) - skipping")
         slo = {}
       end
