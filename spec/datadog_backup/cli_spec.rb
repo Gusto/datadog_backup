@@ -54,6 +54,24 @@ describe DatadogBackup::Cli do
         expect { File.open("#{tempdir}/dashboards/deleted.json", 'r') }.to raise_error(Errno::ENOENT)
       end
     end
+
+    context 'when one resource type raises an unexpected error' do
+      let(:failing_resource) { instance_double(DatadogBackup::Dashboards) }
+      let(:healthy_resource) { instance_double(DatadogBackup::Monitors) }
+
+      before do
+        allow(cli).to receive(:resource_instances).and_return([failing_resource, healthy_resource])
+        allow(failing_resource).to receive(:purge)
+        allow(healthy_resource).to receive(:purge)
+        allow(failing_resource).to receive(:backup).and_raise(Faraday::ForbiddenError.new('403'))
+        allow(healthy_resource).to receive(:backup)
+      end
+
+      it 'still backs up the remaining resources' do
+        expect { cli.backup }.to raise_error(/Backup completed with errors/)
+        expect(healthy_resource).to have_received(:backup)
+      end
+    end
   end
 
   describe '#restore' do
