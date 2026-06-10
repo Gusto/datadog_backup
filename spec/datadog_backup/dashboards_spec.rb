@@ -75,6 +75,22 @@ describe DatadogBackup::Dashboards do
     subject { dashboards.get_by_id('abc-123-def') }
 
     it { is_expected.to eq board_abc_123_def }
+
+    context 'when the dashboard is access-restricted (403)' do
+      subject { dashboards.get_by_id('forbidden-id') }
+
+      before do
+        stubs.get('/api/v1/dashboard/forbidden-id') do
+          raise Faraday::ForbiddenError, 'the server responded with status 403'
+        end
+      end
+
+      it 'returns an empty hash instead of raising' do
+        expect { dashboards.get_by_id('forbidden-id') }.not_to raise_error
+      end
+
+      it { is_expected.to eq({}) }
+    end
   end
 
   describe '#diff' do
