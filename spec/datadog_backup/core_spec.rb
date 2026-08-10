@@ -153,4 +153,51 @@ describe DatadogBackup::Resources do
       end
     end
   end
+
+  describe '#api_service' do
+    # The other examples replace #api_service wholesale, which skips the real
+    # middleware stack. These build the real connection and swap only the
+    # adapter, so retry and raise_error are actually exercised.
+    let(:connection) do
+      described_class.new(
+        action: 'backup',
+        backup_dir: tempdir,
+        diff_format: nil,
+        resources: [],
+        output_format: :json
+      ).send(:api_service).tap { |conn| conn.builder.adapter :test, stubs }
+    end
+
+    before do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with('DD_API_KEY').and_return('dd-api-key')
+      allow(ENV).to receive(:fetch).with('DD_APP_KEY').and_return('dd-app-key')
+    end
+
+    context 'when Datadog returns a 503' do
+      subject(:get_dashboard) { connection.get('/api/v1/dashboard/abc-123-def') }
+
+      let(:attempts) { [] }
+
+      before do
+        stubs.get('/api/v1/dashboard/abc-123-def') do
+          attempts << :call
+          if attempts.size < 2
+            [503, {}, 'Service Unavailable']
+          else
+            [200, { 'Content-Type' => 'application/json' }, '{"id":"abc-123-def"}']
+          end
+        end
+      end
+
+      example 'it retries and returns the eventual success' do
+        expect(get_dashboard.body).to eq({ 'id' => 'abc-123-def' })
+      end
+
+      example 'it issues a second request' do
+        get_dashboard
+        expect(attempts.size).to eq(2)
+      end
+    end
+  end
 end

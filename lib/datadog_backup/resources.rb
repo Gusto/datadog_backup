@@ -14,11 +14,20 @@ module DatadogBackup
 
     RETRY_OPTIONS = {
       max: 5,
-      interval: 0.05,
+      # A 5xx usually means Datadog is shedding load, so coming back in 50ms
+      # tends to hit the same condition. Back off further, but cap the tail.
+      interval: 0.5,
+      max_interval: 8,
       interval_randomness: 0.5,
       backoff_factor: 2,
       rate_limit_reset_header: 'x-ratelimit-reset',
-      exceptions: [Faraday::TooManyRequestsError] + Faraday::Retry::Middleware::DEFAULT_EXCEPTIONS
+      # `retry_statuses` cannot be used here: `raise_error` is registered inside
+      # `retry`, so a 5xx arrives as an exception rather than as a response the
+      # retry middleware can inspect. It has to be matched by class.
+      exceptions: [
+        Faraday::ServerError,
+        Faraday::TooManyRequestsError
+      ] + Faraday::Retry::Middleware::DEFAULT_EXCEPTIONS
     }.freeze
 
     def backup
