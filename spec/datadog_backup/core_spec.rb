@@ -199,5 +199,38 @@ describe DatadogBackup::Resources do
         expect(attempts.size).to eq(2)
       end
     end
+
+    context 'when Datadog returns a 429 that resets later than max_interval' do
+      subject(:get_dashboard) { connection.get('/api/v1/dashboard/abc-123-def') }
+
+      let(:attempts) { [] }
+
+      before do
+        # Datadog rate limits dashboard reads in a 60 second window, so
+        # x-ratelimit-reset is routinely tens of seconds. Skip the wall clock
+        # wait without affecting whether a retry is scheduled. The middleware
+        # is built inside the connection, so there is no instance to stub.
+        # rubocop:disable-next RSpec/AnyInstance
+        allow_any_instance_of(Faraday::Retry::Middleware).to receive(:sleep)
+
+        stubs.get('/api/v1/dashboard/abc-123-def') do
+          attempts << :call
+          if attempts.size < 2
+            [429, { 'x-ratelimit-reset' => '30' }, 'Too Many Requests']
+          else
+            [200, { 'Content-Type' => 'application/json' }, '{"id":"abc-123-def"}']
+          end
+        end
+      end
+
+      example 'it retries and returns the eventual success' do
+        expect(get_dashboard.body).to eq({ 'id' => 'abc-123-def' })
+      end
+
+      example 'it issues a second request' do
+        get_dashboard
+        expect(attempts.size).to eq(2)
+      end
+    end
   end
 end
