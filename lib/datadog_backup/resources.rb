@@ -15,9 +15,15 @@ module DatadogBackup
     RETRY_OPTIONS = {
       max: 5,
       # A 5xx usually means Datadog is shedding load, so coming back in 50ms
-      # tends to hit the same condition. Back off further, but cap the tail.
+      # tends to hit the same condition. Back off further: with `backoff_factor`
+      # and `max` below, the 5xx ladder runs 0.5s, 1s, 2s, 4s, 8s.
       interval: 0.5,
-      max_interval: 8,
+      # `max_interval` doubles as the ceiling on `rate_limit_reset_header`:
+      # faraday-retry abandons the request outright, without retrying, when the
+      # reset value exceeds it. Datadog rate limits in a 60 second window, so
+      # this has to clear 60 or every 429 becomes a hard failure. The 5xx ladder
+      # above tops out at 8s and is unaffected.
+      max_interval: 65,
       interval_randomness: 0.5,
       backoff_factor: 2,
       rate_limit_reset_header: 'x-ratelimit-reset',
